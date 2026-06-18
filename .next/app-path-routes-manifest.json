@@ -4,6 +4,7 @@
   "/bookmarks/page": "/bookmarks",
   "/dashboard/admin/page": "/dashboard/admin",
   "/dashboard/page": "/dashboard",
+  "/dashboard/writer/[id]/edit/page": "/dashboard/writer/[id]/edit",
   "/dashboard/writer/create/page": "/dashboard/writer/create",
   "/dashboard/writer/page": "/dashboard/writer",
   "/ebooks/[id]/page": "/ebooks/[id]",

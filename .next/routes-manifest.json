@@ -23,6 +23,14 @@
   },
   "dynamicRoutes": [
     {
+      "page": "/dashboard/writer/[id]/edit",
+      "regex": "^/dashboard/writer/([^/]+?)/edit(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/dashboard/writer/(?<nxtPid>[^/]+?)/edit(?:/)?$"
+    },
+    {
       "page": "/ebooks/[id]",
       "regex": "^/ebooks/([^/]+?)(?:/)?$",
       "routeKeys": {

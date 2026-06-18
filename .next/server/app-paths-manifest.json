@@ -4,6 +4,7 @@
   "/bookmarks/page": "app/bookmarks/page.js",
   "/dashboard/admin/page": "app/dashboard/admin/page.js",
   "/dashboard/page": "app/dashboard/page.js",
+  "/dashboard/writer/[id]/edit/page": "app/dashboard/writer/[id]/edit/page.js",
   "/dashboard/writer/create/page": "app/dashboard/writer/create/page.js",
   "/dashboard/writer/page": "app/dashboard/writer/page.js",
   "/ebooks/[id]/page": "app/ebooks/[id]/page.js",
