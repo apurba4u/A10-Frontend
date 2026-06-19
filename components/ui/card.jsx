@@ -1,10 +1,10 @@
 import { cn } from "../../lib/utils";
 
-export function Card({ className, ...props }) {
+function Card({ className, ...props }) {
   return (
     <div
       className={cn(
-        "rounded-xl border border-slate-200 bg-white shadow-sm",
+        "rounded-xl border border-border bg-card text-card-foreground shadow-sm",
         className
       )}
       {...props}
@@ -12,36 +12,35 @@ export function Card({ className, ...props }) {
   );
 }
 
-export function CardHeader({ className, ...props }) {
+function CardHeader({ className, ...props }) {
   return (
     <div className={cn("flex flex-col space-y-1.5 p-6", className)} {...props} />
   );
 }
 
-export function CardTitle({ className, ...props }) {
+function CardTitle({ className, ...props }) {
   return (
     <h3
-      className={cn("font-semibold leading-none tracking-tight", className)}
+      className={cn("text-2xl font-semibold leading-none tracking-tight", className)}
       {...props}
     />
   );
 }
 
-export function CardDescription({ className, ...props }) {
+function CardDescription({ className, ...props }) {
   return (
-    <p className={cn("text-sm text-slate-500", className)} {...props} />
+    <p className={cn("text-sm text-muted-foreground", className)} {...props} />
   );
 }
 
-export function CardContent({ className, ...props }) {
+function CardContent({ className, ...props }) {
   return <div className={cn("p-6 pt-0", className)} {...props} />;
 }
 
-export function CardFooter({ className, ...props }) {
+function CardFooter({ className, ...props }) {
   return (
-    <div
-      className={cn("flex items-center p-6 pt-0", className)}
-      {...props}
-    />
+    <div className={cn("flex items-center p-6 pt-0", className)} {...props} />
   );
 }
+
+export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter };

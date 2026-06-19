@@ -3,15 +3,18 @@
 export default function ErrorBoundary({ error, reset }) {
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
-      <h2 className="text-xl font-semibold text-slate-900">
+      <div className="rounded-full bg-destructive/10 p-6">
+        <span className="text-4xl">!</span>
+      </div>
+      <h2 className="mt-6 font-serif text-2xl font-bold text-foreground">
         Something went wrong
       </h2>
-      <p className="mt-2 text-slate-500">
-        {error?.message || "An unexpected error occurred."}
+      <p className="mt-2 max-w-md text-muted-foreground">
+        {error?.message || "An unexpected error occurred. Please try again."}
       </p>
       <button
         onClick={reset}
-        className="mt-6 inline-flex items-center rounded-lg bg-slate-900 px-6 py-3 text-sm font-medium text-white hover:bg-slate-800 transition-colors"
+        className="mt-6 inline-flex items-center rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
       >
         Try Again
       </button>

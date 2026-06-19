@@ -36,7 +36,7 @@ export function AuthProvider({ children }) {
     return data;
   };
 
-  const signUp = async (name, email, password) => {
+  const signUp = async (name, email, password, role) => {
     const { data, error } = await authClient.signUp.email({
       name,
       email,
@@ -44,6 +44,14 @@ export function AuthProvider({ children }) {
     });
     if (error) throw new Error(error.message || error.code);
     setUser(data.user);
+    return data;
+  };
+
+  const signInWithGoogle = async () => {
+    const { data, error } = await authClient.signIn.social({
+      provider: "google",
+    });
+    if (error) throw new Error(error.message || error.code);
     return data;
   };
 
@@ -55,7 +63,15 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, session, loading, signIn, signUp, signOut }}
+      value={{
+        user,
+        session,
+        loading,
+        signIn,
+        signUp,
+        signInWithGoogle,
+        signOut,
+      }}
     >
       {children}
     </AuthContext.Provider>

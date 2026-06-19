@@ -1,18 +1,18 @@
 import { cn } from "../../lib/utils";
 
 const variants = {
-  default: "bg-slate-100 text-slate-800",
-  secondary: "bg-slate-100 text-slate-600",
-  destructive: "bg-red-100 text-red-800",
-  outline: "border border-slate-200 text-slate-600",
-  success: "bg-green-100 text-green-800",
+  default: "bg-primary text-primary-foreground hover:bg-primary/80",
+  secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+  destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/80",
+  outline: "text-foreground border",
+  success: "bg-success text-white hover:bg-success/80",
 };
 
-export function Badge({ className, variant = "default", ...props }) {
+function Badge({ className, variant = "default", ...props }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors",
         variants[variant],
         className
       )}
@@ -20,3 +20,5 @@ export function Badge({ className, variant = "default", ...props }) {
     />
   );
 }
+
+export { Badge };

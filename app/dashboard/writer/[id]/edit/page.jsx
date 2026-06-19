@@ -2,52 +2,50 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useAuth } from "../../../../../context/AuthContext";
 import api from "../../../../../services/api";
+import { useAuth } from "../../../../../context/AuthContext";
 import { Button } from "../../../../../components/ui/button";
 import { Input } from "../../../../../components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../../../components/ui/card";
+import { GENRES } from "../../../../../constants";
 import toast from "react-hot-toast";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { updateEbookSchema } from "../../../../../validations/ebook";
 
 export default function EditEbookPage() {
   const { id } = useParams();
-  const { user, loading: authLoading } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
-  const [form, setForm] = useState({
-    title: "",
-    description: "",
-    price: "0",
-    category: "Uncategorized",
-    tags: "",
-    cover: "",
-    file: "",
-  });
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!authLoading && !user) router.push("/login");
-  }, [user, authLoading, router]);
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(updateEbookSchema),
+  });
 
   useEffect(() => {
-    if (!user) return;
     async function load() {
       try {
         const res = await api.get(`/ebooks/${id}`);
         const ebook = res.data.data;
-        if (ebook.author !== user.id && user.role !== "admin") {
+        if (ebook.writer?._id !== user?.id && user?.role !== "admin") {
           toast.error("Not authorized");
           router.push("/dashboard/writer");
           return;
         }
-        setForm({
-          title: ebook.title || "",
-          description: ebook.description || "",
-          price: String(ebook.price || "0"),
-          category: ebook.category || "Uncategorized",
-          tags: (ebook.tags || []).join(", "),
-          cover: ebook.cover || "",
-          file: ebook.file || "",
+        reset({
+          title: ebook.title,
+          description: ebook.description,
+          fullContent: ebook.fullContent || "",
+          genre: ebook.genre,
+          price: ebook.price,
+          coverImage: ebook.coverImage || "",
         });
       } catch {
         toast.error("Ebook not found");
@@ -56,25 +54,15 @@ export default function EditEbookPage() {
         setLoading(false);
       }
     }
-    load();
-  }, [user, id, router]);
+    if (user) load();
+  }, [id, user, router, reset]);
 
-  async function handleSubmit(e) {
-    e.preventDefault();
+  async function onSubmit(data) {
     setSaving(true);
     try {
-      const payload = {
-        title: form.title,
-        description: form.description,
-        price: parseFloat(form.price) || 0,
-        category: form.category,
-        tags: form.tags ? form.tags.split(",").map((t) => t.trim()) : [],
-        cover: form.cover || null,
-        file: form.file || null,
-      };
-      await api.put(`/ebooks/${id}`, payload);
+      await api.put(`/ebooks/${id}`, data);
       toast.success("Ebook updated!");
-      router.push(`/ebooks/${id}`);
+      router.push(`/ebook/${id}`);
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -82,88 +70,59 @@ export default function EditEbookPage() {
     }
   }
 
-  if (authLoading || !user || loading) {
+  if (loading) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-8">
-        <div className="h-8 w-48 animate-pulse rounded bg-slate-100" />
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="max-w-2xl">
       <Card>
         <CardHeader>
-          <CardTitle>Edit Ebook</CardTitle>
+          <CardTitle className="font-serif text-xl">Edit Ebook</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
               <label className="mb-1 block text-sm font-medium">Title</label>
-              <Input
-                value={form.title}
-                onChange={(e) => setForm({ ...form, title: e.target.value })}
-                required
-              />
+              <Input {...register("title")} />
+              {errors.title && <p className="mt-1 text-sm text-destructive">{errors.title.message}</p>}
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium">Description</label>
               <textarea
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-                required
-                rows={5}
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
+                {...register("description")}
+                rows={4}
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+              />
+              {errors.description && <p className="mt-1 text-sm text-destructive">{errors.description.message}</p>}
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium">Full Content</label>
+              <textarea
+                {...register("fullContent")}
+                rows={10}
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="mb-1 block text-sm font-medium">Price ($)</label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={form.price}
-                  onChange={(e) => setForm({ ...form, price: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium">Category</label>
-                <select
-                  value={form.category}
-                  onChange={(e) => setForm({ ...form, category: e.target.value })}
-                  className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm"
-                >
-                  <option>Uncategorized</option>
-                  <option>Technology</option>
-                  <option>Fiction</option>
-                  <option>Science</option>
-                  <option>History</option>
-                  <option>Self-Help</option>
-                  <option>Business</option>
+                <label className="mb-1 block text-sm font-medium">Genre</label>
+                <select {...register("genre")} className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm">
+                  {GENRES.map((g) => <option key={g} value={g}>{g}</option>)}
                 </select>
               </div>
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium">Tags (comma-separated)</label>
-              <Input
-                value={form.tags}
-                onChange={(e) => setForm({ ...form, tags: e.target.value })}
-              />
+              <div>
+                <label className="mb-1 block text-sm font-medium">Price ($)</label>
+                <Input type="number" min="0" step="0.01" {...register("price", { valueAsNumber: true })} />
+              </div>
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium">Cover Image URL</label>
-              <Input
-                value={form.cover}
-                onChange={(e) => setForm({ ...form, cover: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium">File URL</label>
-              <Input
-                value={form.file}
-                onChange={(e) => setForm({ ...form, file: e.target.value })}
-              />
+              <Input {...register("coverImage")} />
             </div>
             <Button type="submit" className="w-full" disabled={saving}>
               {saving ? "Saving..." : "Save Changes"}

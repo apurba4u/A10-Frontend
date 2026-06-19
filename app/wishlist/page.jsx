@@ -6,15 +6,14 @@ import Link from "next/link";
 import { useAuth } from "../../context/AuthContext";
 import api from "../../services/api";
 import { Badge } from "../../components/ui/badge";
-import { Button } from "../../components/ui/button";
 import { Skeleton } from "../../components/ui/skeleton";
-import { BookmarkX } from "lucide-react";
+import { Heart } from "lucide-react";
 import toast from "react-hot-toast";
 
-export default function BookmarksPage() {
+export default function WishlistPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
-  const [bookmarks, setBookmarks] = useState([]);
+  const [wishlist, setWishlist] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -25,10 +24,10 @@ export default function BookmarksPage() {
     if (!user) return;
     async function load() {
       try {
-        const res = await api.get("/bookmarks");
-        setBookmarks(res.data.data);
+        const res = await api.get("/wishlist");
+        setWishlist(res.data.data);
       } catch {
-        setBookmarks([]);
+        setWishlist([]);
       } finally {
         setLoading(false);
       }
@@ -38,9 +37,9 @@ export default function BookmarksPage() {
 
   async function remove(ebookId) {
     try {
-      await api.delete(`/bookmarks/${ebookId}`);
-      setBookmarks((prev) => prev.filter((b) => b.ebook?._id !== ebookId));
-      toast.success("Bookmark removed");
+      await api.delete(`/wishlist/${ebookId}`);
+      setWishlist((prev) => prev.filter((w) => w.ebook?._id !== ebookId));
+      toast.success("Removed from wishlist");
     } catch (err) {
       toast.error(err.message);
     }
@@ -50,7 +49,7 @@ export default function BookmarksPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-      <h1 className="font-serif text-3xl font-bold text-foreground">My Bookmarks</h1>
+      <h1 className="font-serif text-3xl font-bold text-foreground">My Wishlist</h1>
 
       {loading ? (
         <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -61,15 +60,15 @@ export default function BookmarksPage() {
             </div>
           ))}
         </div>
-      ) : bookmarks.length === 0 ? (
-        <p className="mt-8 text-muted-foreground">No bookmarks yet.</p>
+      ) : wishlist.length === 0 ? (
+        <p className="mt-8 text-muted-foreground">Your wishlist is empty.</p>
       ) : (
         <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {bookmarks.map((b) => {
-            const ebook = b.ebook;
+          {wishlist.map((w) => {
+            const ebook = w.ebook;
             if (!ebook) return null;
             return (
-              <div key={b._id} className="group relative rounded-xl border border-border bg-card p-5 shadow-sm">
+              <div key={w._id} className="group relative rounded-xl border border-border bg-card p-5 shadow-sm">
                 <Link href={`/ebook/${ebook._id}`}>
                   {ebook.coverImage ? (
                     <img src={ebook.coverImage} alt={ebook.title} className="h-36 w-full rounded-lg object-cover" />
@@ -89,9 +88,9 @@ export default function BookmarksPage() {
                 <button
                   onClick={() => remove(ebook._id)}
                   className="absolute right-3 top-3 rounded-full bg-background/80 p-1.5 text-muted-foreground hover:text-destructive"
-                  aria-label="Remove bookmark"
+                  aria-label="Remove from wishlist"
                 >
-                  <BookmarkX className="h-4 w-4" />
+                  <Heart className="h-4 w-4 fill-destructive text-destructive" />
                 </button>
               </div>
             );
