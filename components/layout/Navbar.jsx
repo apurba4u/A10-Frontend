@@ -5,8 +5,8 @@ import { useAuth } from "@/context/AuthContext";
 import api from "@/services/api";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/ModeToggle";
-import { BookOpen, Menu, X, LayoutDashboard, LogOut, User, Bell } from "lucide-react";
-import { useState, useEffect } from "react";
+import { BookOpen, Menu, X, LayoutDashboard, LogOut, User, Bell, Check, Trash2 } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -15,10 +15,20 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 
+const notifIcons = {
+  success: "✅",
+  error: "❌",
+  warning: "⚠️",
+  info: "ℹ️",
+};
+
 export default function Navbar() {
   const { user, signOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifs, setShowNotifs] = useState(false);
+  const notifRef = useRef(null);
 
   useEffect(() => {
     if (!user) return;
@@ -32,6 +42,49 @@ export default function Navbar() {
     const interval = setInterval(fetchCount, 30000);
     return () => clearInterval(interval);
   }, [user]);
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (notifRef.current && !notifRef.current.contains(e.target)) {
+        setShowNotifs(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  async function openNotifications() {
+    setShowNotifs(!showNotifs);
+    if (!showNotifs) {
+      try {
+        const res = await api.get("/notifications?limit=10");
+        setNotifications(res.data.data?.notifications || []);
+      } catch {}
+    }
+  }
+
+  async function markAllRead() {
+    try {
+      await api.put("/notifications/read");
+      setUnreadCount(0);
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    } catch {}
+  }
+
+  async function markOneRead(id) {
+    try {
+      await api.put(`/notifications/${id}/read`);
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+      setNotifications((prev) => prev.map((n) => (n._id === id ? { ...n, read: true } : n)));
+    } catch {}
+  }
+
+  async function deleteOne(id) {
+    try {
+      await api.delete(`/notifications/${id}`);
+      setNotifications((prev) => prev.filter((n) => n._id !== id));
+    } catch {}
+  }
 
   const initials = user?.name
     ? user.name
@@ -54,6 +107,9 @@ export default function Navbar() {
           <Link href="/browse" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
             Browse
           </Link>
+          <Link href="/coupons" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            Coupons
+          </Link>
 
           {user ? (
             <>
@@ -64,14 +120,77 @@ export default function Navbar() {
                 Bookmarks
               </Link>
               <ModeToggle />
-              <Link href="/notifications" className="relative text-muted-foreground hover:text-foreground transition-colors">
-                <Bell className="h-5 w-5" />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-2 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-                    {unreadCount > 9 ? "9+" : unreadCount}
-                  </span>
+              <div className="relative" ref={notifRef}>
+                <button
+                  onClick={openNotifications}
+                  className="relative text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <Bell className="h-5 w-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-2 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
+                </button>
+                {showNotifs && (
+                  <div className="absolute right-0 top-full mt-2 w-80 rounded-lg border border-border bg-background shadow-lg z-50">
+                    <div className="flex items-center justify-between border-b border-border p-3">
+                      <h3 className="text-sm font-semibold text-foreground">Notifications</h3>
+                      {unreadCount > 0 && (
+                        <button onClick={markAllRead} className="text-xs text-primary hover:underline">
+                          Mark all read
+                        </button>
+                      )}
+                    </div>
+                    <div className="max-h-80 overflow-y-auto">
+                      {notifications.length === 0 ? (
+                        <p className="p-4 text-center text-sm text-muted-foreground">No notifications</p>
+                      ) : (
+                        notifications.map((n) => (
+                          <div
+                            key={n._id}
+                            className={`flex items-start gap-3 border-b border-border p-3 last:border-0 ${!n.read ? "bg-primary/5" : ""}`}
+                          >
+                            <span className="mt-0.5 text-lg">{notifIcons[n.type] || "ℹ️"}</span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-foreground">{n.title}</p>
+                              <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">{n.message}</p>
+                              <p className="mt-1 text-[10px] text-muted-foreground">
+                                {new Date(n.createdAt).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <div className="flex gap-1">
+                              {!n.read && (
+                                <button
+                                  onClick={() => markOneRead(n._id)}
+                                  className="rounded p-1 text-muted-foreground hover:bg-accent"
+                                >
+                                  <Check className="h-3 w-3" />
+                                </button>
+                              )}
+                              <button
+                                onClick={() => deleteOne(n._id)}
+                                className="rounded p-1 text-muted-foreground hover:bg-accent"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </button>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                    <div className="border-t border-border p-2">
+                      <Link
+                        href="/notifications"
+                        onClick={() => setShowNotifs(false)}
+                        className="block text-center text-xs text-primary hover:underline"
+                      >
+                        View all notifications
+                      </Link>
+                    </div>
+                  </div>
                 )}
-              </Link>
+              </div>
               <DropdownMenu>
                 {({ open, setOpen }) => (
                   <>
@@ -144,6 +263,9 @@ export default function Navbar() {
           <div className="flex flex-col gap-3 pt-3">
             <Link href="/browse" className="text-sm font-medium" onClick={() => setMobileOpen(false)}>
               Browse
+            </Link>
+            <Link href="/coupons" className="text-sm font-medium" onClick={() => setMobileOpen(false)}>
+              Coupons
             </Link>
             {user ? (
               <>

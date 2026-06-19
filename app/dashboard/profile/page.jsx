@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
-import { Camera, ArrowLeft, Loader2 } from "lucide-react";
+import { Camera, ArrowLeft, Loader2, Check } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { useAuth } from "@/context/AuthContext";
@@ -30,12 +30,14 @@ export default function ProfilePage() {
   const fileInputRef = useRef(null);
   const [isUploading, setIsUploading] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState(user?.avatar || "");
+  const [saved, setSaved] = useState(false);
 
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
     setValue,
+    watch,
   } = useForm({
     resolver: zodResolver(profileSchema),
     defaultValues: {
@@ -43,6 +45,9 @@ export default function ProfilePage() {
       bio: user?.bio || "",
     },
   });
+
+  const watchName = watch("name");
+  const watchBio = watch("bio");
 
   const handleAvatarChange = async (e) => {
     const file = e.target.files?.[0];
@@ -62,12 +67,9 @@ export default function ProfilePage() {
     try {
       const imageUrl = await uploadToImgBB(file);
       setAvatarPreview(imageUrl);
-
       await api.put("/users/me", { avatar: imageUrl });
-
       await refreshUser();
-
-      toast.success("Avatar updated successfully");
+      toast.success("Avatar updated");
     } catch (error) {
       toast.error("Failed to upload avatar");
     } finally {
@@ -78,10 +80,10 @@ export default function ProfilePage() {
   const onSubmit = async (data) => {
     try {
       await api.put("/users/me", data);
-
       await refreshUser();
-
+      setSaved(true);
       toast.success("Profile updated successfully");
+      setTimeout(() => setSaved(false), 2000);
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to update profile");
     }
@@ -222,13 +224,18 @@ export default function ProfilePage() {
 
               <Button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || !isDirty}
                 className="w-full"
               >
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Saving...
+                  </>
+                ) : saved ? (
+                  <>
+                    <Check className="mr-2 h-4 w-4" />
+                    Saved!
                   </>
                 ) : (
                   "Save Changes"

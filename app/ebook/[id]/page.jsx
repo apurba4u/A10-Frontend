@@ -65,9 +65,13 @@ export default function EbookDetailPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("purchase") === "success") {
-      toast.success("Purchase completed successfully!");
-      toast("Your ebook is now available in My Library.", { icon: "📚" });
-      router.push("/dashboard/user");
+      toast.success("Purchase Successful", {
+        description: "Your ebook has been added to My Library.",
+        duration: 5000,
+      });
+      setTimeout(() => {
+        router.push("/dashboard/library");
+      }, 1500);
     }
   }, [router]);
 

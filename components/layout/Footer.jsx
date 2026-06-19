@@ -47,6 +47,11 @@ export default function Footer() {
                   Start Writing
                 </a>
               </li>
+              <li>
+                <Link href="/coupons" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  Coupons
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -81,7 +86,7 @@ export default function Footer() {
 
         <div className="mt-8 border-t border-border pt-8 text-center">
           <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} Fable. All rights reserved.
+            &copy; {new Date().getFullYear()} Fable. All rights reserved. Created by Apurba Ovi
           </p>
         </div>
       </div>

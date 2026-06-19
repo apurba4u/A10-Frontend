@@ -283,6 +283,7 @@ export default function AdminDashboardPage() {
         <TabsList>
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="ebooks">Ebooks</TabsTrigger>
+          <TabsTrigger value="ebook-approvals">Ebook Approvals</TabsTrigger>
           <TabsTrigger value="transactions">Transactions</TabsTrigger>
           <TabsTrigger value="coupons">Coupons</TabsTrigger>
           <TabsTrigger value="writer-apps">Writer Apps</TabsTrigger>
@@ -368,6 +369,88 @@ export default function AdminDashboardPage() {
                   ))}
                 </TableBody>
               </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="ebook-approvals">
+          <Card>
+            <CardContent className="p-0">
+              {ebooks.filter((e) => e.status === "pending").length === 0 ? (
+                <p className="p-6 text-center text-muted-foreground">No pending ebook approvals.</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Cover</TableHead>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Writer</TableHead>
+                      <TableHead>Genre</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {ebooks.filter((e) => e.status === "pending").map((e) => (
+                      <TableRow key={e._id}>
+                        <TableCell>
+                          {e.coverImage ? (
+                            <img src={e.coverImage} alt="" className="h-10 w-10 rounded object-cover" />
+                          ) : (
+                            <div className="flex h-10 w-10 items-center justify-center rounded bg-primary/10 text-xs font-bold text-primary">
+                              {e.title.charAt(0)}
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell className="font-medium">{e.title}</TableCell>
+                        <TableCell>{e.writer?.name || "Unknown"}</TableCell>
+                        <TableCell>{e.genre}</TableCell>
+                        <TableCell>{new Date(e.createdAt).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className="bg-yellow-500/10 text-yellow-600 dark:text-yellow-400">
+                            Pending
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={async () => {
+                                try {
+                                  await api.post(`/ebooks/${e._id}/approve`);
+                                  setEbooks((prev) => prev.map((x) => x._id === e._id ? { ...x, status: "approved", isPublished: true } : x));
+                                  toast.success("Ebook approved");
+                                } catch (err) {
+                                  toast.error(err.message);
+                                }
+                              }}
+                            >
+                              Approve
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={async () => {
+                                try {
+                                  await api.post(`/ebooks/${e._id}/reject`);
+                                  setEbooks((prev) => prev.map((x) => x._id === e._id ? { ...x, status: "rejected", isPublished: false } : x));
+                                  toast.success("Ebook rejected");
+                                } catch (err) {
+                                  toast.error(err.message);
+                                }
+                              }}
+                            >
+                              Reject
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

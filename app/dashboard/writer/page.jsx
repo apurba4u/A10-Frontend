@@ -12,6 +12,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Edit, Eye, Trash2, Star } from "lucide-react";
 import toast from "react-hot-toast";
 
+const statusConfig = {
+  pending: { label: "Pending Approval", variant: "secondary", className: "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400" },
+  approved: { label: "Approved", variant: "success", className: "bg-green-500/10 text-green-600 dark:text-green-400" },
+  rejected: { label: "Rejected", variant: "destructive" },
+};
+
 export default function WriterDashboardPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -107,14 +113,16 @@ export default function WriterDashboardPage() {
       <div className="flex max-w-2xl flex-col items-center justify-center py-16 text-center">
         <h1 className="font-serif text-3xl font-bold text-foreground">Become a Writer</h1>
         <p className="mt-4 text-muted-foreground">
-          Pay a one-time verification fee of $9.99 to start publishing ebooks on Fable.
+          Pay a one-time verification fee of $10 to start publishing ebooks on Fable.
         </p>
         <Button onClick={handleVerify} disabled={verifying} className="mt-8" size="lg">
-          {verifying ? "Processing..." : "Pay $9.99 to Verify"}
+          {verifying ? "Processing..." : "Pay $10 to Verify"}
         </Button>
       </div>
     );
   }
+
+  const pendingCount = ebooks.filter((e) => e.status === "pending").length;
 
   return (
     <div className="max-w-6xl">
@@ -125,7 +133,7 @@ export default function WriterDashboardPage() {
         </Link>
       </div>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2">
+      <div className="mt-6 grid gap-4 sm:grid-cols-3">
         <Card>
           <CardContent className="p-6">
             <p className="text-sm text-muted-foreground">Total Revenue</p>
@@ -138,6 +146,12 @@ export default function WriterDashboardPage() {
             <p className="text-2xl font-bold">{salesStats.totalSales || 0}</p>
           </CardContent>
         </Card>
+        <Card>
+          <CardContent className="p-6">
+            <p className="text-sm text-muted-foreground">Pending Approval</p>
+            <p className="text-2xl font-bold">{pendingCount}</p>
+          </CardContent>
+        </Card>
       </div>
 
       <h2 className="mt-8 font-serif text-xl font-semibold text-foreground">My Ebooks</h2>
@@ -146,42 +160,50 @@ export default function WriterDashboardPage() {
           <p className="text-muted-foreground">No ebooks yet. Create your first one!</p>
         ) : (
           <div className="space-y-3">
-            {ebooks.map((ebook) => (
-              <Card key={ebook._id}>
-                <CardContent className="flex items-center justify-between p-4">
-                  <div>
-                    <h3 className="font-semibold">{ebook.title}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {ebook.genre} &middot; ${ebook.price.toFixed(2)} &middot; {ebook.soldCount} sold
-                      {ebookReviewStats[ebook._id]?.reviewCount > 0 && (
-                        <span className="ml-2 inline-flex items-center gap-1">
-                          <Star className="inline h-3 w-3 fill-yellow-400 text-yellow-400" />
-                          {ebookReviewStats[ebook._id].averageRating?.toFixed(1)}
-                          ({ebookReviewStats[ebook._id].reviewCount})
-                        </span>
+            {ebooks.map((ebook) => {
+              const st = statusConfig[ebook.status] || statusConfig.pending;
+              return (
+                <Card key={ebook._id}>
+                  <CardContent className="flex items-center justify-between p-4">
+                    <div>
+                      <h3 className="font-semibold">{ebook.title}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {ebook.genre} &middot; ${ebook.price.toFixed(2)} &middot; {ebook.soldCount} sold
+                        {ebookReviewStats[ebook._id]?.reviewCount > 0 && (
+                          <span className="ml-2 inline-flex items-center gap-1">
+                            <Star className="inline h-3 w-3 fill-yellow-400 text-yellow-400" />
+                            {ebookReviewStats[ebook._id].averageRating?.toFixed(1)}
+                            ({ebookReviewStats[ebook._id].reviewCount})
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        variant={st.variant}
+                        className={st.className || ""}
+                      >
+                        {st.label}
+                      </Badge>
+                      {ebook.status === "approved" && (
+                        <Button variant="ghost" size="sm" onClick={() => togglePublish(ebook._id)}>
+                          {ebook.isPublished ? "Unpublish" : "Publish"}
+                        </Button>
                       )}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={ebook.isPublished ? "success" : "secondary"}>
-                      {ebook.isPublished ? "Published" : "Draft"}
-                    </Badge>
-                    <Button variant="ghost" size="sm" onClick={() => togglePublish(ebook._id)}>
-                      {ebook.isPublished ? "Unpublish" : "Publish"}
-                    </Button>
-                    <Link href={`/dashboard/writer/${ebook._id}/edit`}>
-                      <Button variant="ghost" size="sm"><Edit className="h-4 w-4" /></Button>
-                    </Link>
-                    <Link href={`/ebook/${ebook._id}`}>
-                      <Button variant="ghost" size="sm"><Eye className="h-4 w-4" /></Button>
-                    </Link>
-                    <Button variant="ghost" size="sm" onClick={() => deleteEbook(ebook._id)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                      <Link href={`/dashboard/writer/${ebook._id}/edit`}>
+                        <Button variant="ghost" size="sm"><Edit className="h-4 w-4" /></Button>
+                      </Link>
+                      <Link href={`/ebook/${ebook._id}`}>
+                        <Button variant="ghost" size="sm"><Eye className="h-4 w-4" /></Button>
+                      </Link>
+                      <Button variant="ghost" size="sm" onClick={() => deleteEbook(ebook._id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
       </div>

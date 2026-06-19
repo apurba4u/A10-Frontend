@@ -21,23 +21,26 @@ import {
 } from "lucide-react";
 
 const userLinks = [
-  { href: "/dashboard/user", label: "My Library", icon: Library },
   { href: "/dashboard/user", label: "Overview", icon: LayoutDashboard },
+  { href: "/dashboard/library", label: "My Library", icon: Library },
+  { href: "/dashboard/application-status", label: "Application Status", icon: FileText },
   { href: "/bookmarks", label: "Bookmarks", icon: Bookmark },
   { href: "/wishlist", label: "Wishlist", icon: Heart },
-  { href: "/dashboard/application-status", label: "Application Status", icon: FileText },
   { href: "/notifications", label: "Notifications", icon: Bell },
 ];
 
 const writerLinks = [
   { href: "/dashboard/writer", label: "Overview", icon: LayoutDashboard },
+  { href: "/dashboard/library", label: "My Library", icon: Library },
   { href: "/dashboard/writer", label: "My Ebooks", icon: BookOpen },
   { href: "/dashboard/writer/create", label: "New Ebook", icon: PenLine },
+  { href: "/bookmarks", label: "Bookmarks", icon: Bookmark },
   { href: "/notifications", label: "Notifications", icon: Bell },
 ];
 
 const adminLinks = [
-  { href: "/dashboard/admin", label: "Analytics", icon: BarChart3 },
+  { href: "/dashboard/admin", label: "Overview", icon: BarChart3 },
+  { href: "/dashboard/library", label: "My Library", icon: Library },
   { href: "/dashboard/admin", label: "Users", icon: Users },
   { href: "/dashboard/admin", label: "Ebooks", icon: BookOpen },
   { href: "/dashboard/admin", label: "Transactions", icon: ShoppingCart },
@@ -81,6 +84,7 @@ export default function DashboardSidebar() {
               link.href !== "/dashboard/writer" &&
               link.href !== "/dashboard/admin" &&
               link.href !== "/dashboard/profile" &&
+              link.href !== "/dashboard/library" &&
               link.href !== "/dashboard/application-status" &&
               pathname.startsWith(link.href);
             const isActive = isExact || isSubPage;
