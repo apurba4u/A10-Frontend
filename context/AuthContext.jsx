@@ -61,20 +61,32 @@ export function AuthProvider({ children }) {
   }
 
   const signIn = async (email, password) => {
-    const { data, error } = await authClient.signIn.email({ email, password });
-    if (error) throw new Error(error.message || error.code);
-
-    const res = await api.get("/auth/session");
-    if (res.data?.data?.user) {
-      setUser(res.data.data.user);
-      setSession(res.data.data.session);
+    const res = await api.post("/auth/login", { email, password });
+    const userData = res.data?.data?.user;
+    if (userData) {
+      setUser(userData);
+    }
+    const sessionRes = await api.get("/auth/session");
+    if (sessionRes.data?.data?.user) {
+      setUser(sessionRes.data.data.user);
+      setSession(sessionRes.data.data.session);
       checkApplicationStatus();
     }
-    return data;
+    return res.data;
   };
 
   const signUp = async (name, email, password, role) => {
     const res = await api.post("/auth/register", { name, email, password, role });
+    const userData = res.data?.data?.user;
+    if (userData) {
+      setUser(userData);
+    }
+    const sessionRes = await api.get("/auth/session");
+    if (sessionRes.data?.data?.user) {
+      setUser(sessionRes.data.data.user);
+      setSession(sessionRes.data.data.session);
+      checkApplicationStatus();
+    }
     return res.data;
   };
 
@@ -111,7 +123,9 @@ export function AuthProvider({ children }) {
   };
 
   const signOut = async () => {
-    await authClient.signOut();
+    try {
+      await api.post("/auth/logout");
+    } catch {}
     setUser(null);
     setSession(null);
   };

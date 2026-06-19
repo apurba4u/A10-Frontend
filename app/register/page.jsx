@@ -18,7 +18,7 @@ import AlreadyLoggedInDialog from "@/components/AlreadyLoggedInDialog";
 export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
-  const { signInWithGoogle, user } = useAuth();
+  const { signInWithGoogle, user, refreshUser } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -49,6 +49,7 @@ export default function RegisterPage() {
         role: data.role,
       });
 
+      await refreshUser();
       toast.success("Account created successfully!");
       router.push("/browse");
     } catch (err) {
