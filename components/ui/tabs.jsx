@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, createContext, useContext } from "react";
-import { cn } from "../../lib/utils";
+import { cn } from "@/lib/utils";
 
 const TabsContext = createContext(null);
 

@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useAuth } from "../../context/AuthContext";
-import { cn } from "../../lib/utils";
+import { useAuth } from "@/context/AuthContext";
+import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
   BookOpen,
@@ -14,19 +14,26 @@ import {
   Users,
   Settings,
   BarChart3,
+  Ticket,
+  Library,
+  Bell,
+  FileText,
 } from "lucide-react";
 
 const userLinks = [
+  { href: "/dashboard/user", label: "My Library", icon: Library },
   { href: "/dashboard/user", label: "Overview", icon: LayoutDashboard },
-  { href: "/dashboard/user", label: "Purchases", icon: ShoppingCart },
   { href: "/bookmarks", label: "Bookmarks", icon: Bookmark },
   { href: "/wishlist", label: "Wishlist", icon: Heart },
+  { href: "/dashboard/application-status", label: "Application Status", icon: FileText },
+  { href: "/notifications", label: "Notifications", icon: Bell },
 ];
 
 const writerLinks = [
   { href: "/dashboard/writer", label: "Overview", icon: LayoutDashboard },
-  { href: "/dashboard/writer/create", label: "New Ebook", icon: PenLine },
   { href: "/dashboard/writer", label: "My Ebooks", icon: BookOpen },
+  { href: "/dashboard/writer/create", label: "New Ebook", icon: PenLine },
+  { href: "/notifications", label: "Notifications", icon: Bell },
 ];
 
 const adminLinks = [
@@ -34,19 +41,28 @@ const adminLinks = [
   { href: "/dashboard/admin", label: "Users", icon: Users },
   { href: "/dashboard/admin", label: "Ebooks", icon: BookOpen },
   { href: "/dashboard/admin", label: "Transactions", icon: ShoppingCart },
+  { href: "/dashboard/admin", label: "Coupons", icon: Ticket },
+  { href: "/notifications", label: "Notifications", icon: Bell },
 ];
+
+const profileLink = { href: "/dashboard/profile", label: "Profile", icon: Settings };
 
 export default function DashboardSidebar() {
   const { user } = useAuth();
   const pathname = usePathname();
 
-  let links = userLinks;
-  if (user?.role === "writer" || user?.role === "admin") {
-    links = writerLinks;
+  function getLinks() {
+    switch (user?.role) {
+      case "admin":
+        return [...adminLinks, profileLink];
+      case "writer":
+        return [...writerLinks, profileLink];
+      default:
+        return [...userLinks, profileLink];
+    }
   }
-  if (user?.role === "admin") {
-    links = adminLinks;
-  }
+
+  const links = getLinks();
 
   return (
     <aside className="hidden w-64 border-r border-border bg-background lg:block">
@@ -59,10 +75,18 @@ export default function DashboardSidebar() {
         <nav className="flex-1 space-y-1">
           {links.map((link) => {
             const Icon = link.icon;
-            const isActive = pathname === link.href;
+            const isExact = pathname === link.href;
+            const isSubPage =
+              link.href !== "/dashboard/user" &&
+              link.href !== "/dashboard/writer" &&
+              link.href !== "/dashboard/admin" &&
+              link.href !== "/dashboard/profile" &&
+              link.href !== "/dashboard/application-status" &&
+              pathname.startsWith(link.href);
+            const isActive = isExact || isSubPage;
             return (
               <Link
-                key={link.label}
+                key={link.label + link.href}
                 href={link.href}
                 className={cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",

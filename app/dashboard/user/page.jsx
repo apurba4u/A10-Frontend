@@ -1,16 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useAuth } from "../../../context/AuthContext";
-import api from "../../../services/api";
-import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
-import { Button } from "../../../components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../../components/ui/table";
-import { Badge } from "../../../components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../components/ui/tabs";
-import { Avatar, AvatarFallback, AvatarImage } from "../../../components/ui/avatar";
-import { Separator } from "../../../components/ui/separator";
-import { BookOpen, Bookmark, Heart, ShoppingCart } from "lucide-react";
+import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
+import api from "@/services/api";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { BookOpen, Bookmark, Heart, ShoppingCart, Library, FileText } from "lucide-react";
 import toast from "react-hot-toast";
 
 export default function UserDashboardPage() {
@@ -19,6 +19,7 @@ export default function UserDashboardPage() {
   const [purchases, setPurchases] = useState([]);
   const [bookmarks, setBookmarks] = useState([]);
   const [wishlist, setWishlist] = useState([]);
+  const [writerApplication, setWriterApplication] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -37,6 +38,10 @@ export default function UserDashboardPage() {
           bookmarks: bookmarksRes.data.data?.length || 0,
           wishlist: wishlistRes.data.data?.length || 0,
         });
+        try {
+          const appRes = await api.get("/writer-applications/me");
+          setWriterApplication(appRes.data.data);
+        } catch {}
       } catch {} finally {
         setLoading(false);
       }
@@ -51,6 +56,8 @@ export default function UserDashboardPage() {
       </div>
     );
   }
+
+  const purchasedEbooks = purchases.filter(p => p.type === "purchase" && p.ebook);
 
   return (
     <div className="max-w-6xl">
@@ -89,12 +96,113 @@ export default function UserDashboardPage() {
         </Card>
       </div>
 
-      <Tabs defaultValue="purchases" className="mt-8">
+      {writerApplication && (
+        <Card className="mt-6">
+          <CardContent className="flex items-center justify-between p-4">
+            <div className="flex items-center gap-3">
+              <FileText className="h-5 w-5 text-primary" />
+              <div>
+                <p className="text-sm font-medium text-foreground">Writer Status</p>
+                <p className="text-xs text-muted-foreground">
+                  {writerApplication.status === "pending" && "Your application is pending review."}
+                  {writerApplication.status === "approved" && "You are a verified writer."}
+                  {writerApplication.status === "rejected" && "Your application was not approved."}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant={writerApplication.status === "approved" ? "success" : writerApplication.status === "rejected" ? "destructive" : "secondary"}>
+                {writerApplication.status === "pending" && "Pending Approval"}
+                {writerApplication.status === "approved" && "Verified Writer"}
+                {writerApplication.status === "rejected" && "Rejected"}
+              </Badge>
+              {writerApplication.status === "pending" && (
+                <Link href="/dashboard/application-status">
+                  <Button variant="outline" size="sm">View</Button>
+                </Link>
+              )}
+              {writerApplication.status === "approved" && (
+                <Link href="/dashboard/writer">
+                  <Button variant="outline" size="sm">Writer Dashboard</Button>
+                </Link>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {!writerApplication && user?.role === "user" && (
+        <Card className="mt-6">
+          <CardContent className="flex items-center justify-between p-4">
+            <div className="flex items-center gap-3">
+              <FileText className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <p className="text-sm font-medium text-foreground">Become a Writer</p>
+                <p className="text-xs text-muted-foreground">Publish ebooks and earn revenue</p>
+              </div>
+            </div>
+            <Link href="/become-writer">
+              <Button variant="outline" size="sm">Apply Now</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      )}
+
+      <Tabs defaultValue="library" className="mt-8">
         <TabsList>
+          <TabsTrigger value="library">My Library</TabsTrigger>
           <TabsTrigger value="purchases">Purchase History</TabsTrigger>
           <TabsTrigger value="bookmarks">Bookmarks</TabsTrigger>
           <TabsTrigger value="wishlist">Wishlist</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="library">
+          {purchasedEbooks.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <Library className="h-12 w-12 text-muted-foreground" />
+                <p className="mt-4 text-lg font-medium text-foreground">Your library is empty</p>
+                <p className="mt-1 text-sm text-muted-foreground">Purchase ebooks to start building your collection</p>
+                <Link href="/browse" className="mt-4">
+                  <Button>Browse Ebooks</Button>
+                </Link>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {purchasedEbooks.map((p) => (
+                <Card key={p._id} className="overflow-hidden transition-all hover:shadow-md">
+                  {p.ebook?.coverImage ? (
+                    <img
+                      src={p.ebook.coverImage}
+                      alt={p.ebook.title}
+                      className="h-40 w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-40 items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
+                      <span className="text-4xl font-bold text-primary/30 font-serif">
+                        {p.ebook?.title?.charAt(0) || "?"}
+                      </span>
+                    </div>
+                  )}
+                  <CardContent className="p-4">
+                    <h3 className="font-serif font-semibold text-foreground line-clamp-1">{p.ebook?.title}</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">by {p.ebook?.writer?.name || "Unknown"}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Purchased {new Date(p.createdAt).toLocaleDateString()}
+                    </p>
+                    <Link href={`/reader/${p.ebook?._id}`} className="mt-3 block">
+                      <Button className="w-full gap-2" size="sm">
+                        <BookOpen className="h-4 w-4" />
+                        Read Now
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
 
         <TabsContent value="purchases">
           <Card>

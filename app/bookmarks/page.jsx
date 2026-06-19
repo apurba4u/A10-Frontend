@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useAuth } from "../../context/AuthContext";
-import api from "../../services/api";
-import { Badge } from "../../components/ui/badge";
-import { Button } from "../../components/ui/button";
-import { Skeleton } from "../../components/ui/skeleton";
+import { useAuth } from "@/context/AuthContext";
+import api from "@/services/api";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { BookmarkX } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -50,50 +51,83 @@ export default function BookmarksPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-      <h1 className="font-serif text-3xl font-bold text-foreground">My Bookmarks</h1>
+      <h1 className="font-serif text-3xl font-bold text-foreground">
+        My Bookmarks
+      </h1>
 
       {loading ? (
         <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="rounded-xl border border-border bg-card p-5">
-              <Skeleton className="h-36 w-full rounded-lg" />
-              <Skeleton className="mt-3 h-5 w-3/4" />
-            </div>
+            <Card key={i}>
+              <CardContent className="p-5">
+                <Skeleton className="h-36 w-full rounded-lg" />
+                <Skeleton className="mt-3 h-5 w-3/4" />
+                <Skeleton className="mt-2 h-4 w-1/2" />
+              </CardContent>
+            </Card>
           ))}
         </div>
       ) : bookmarks.length === 0 ? (
-        <p className="mt-8 text-muted-foreground">No bookmarks yet.</p>
+        <Card className="mt-8">
+          <CardContent className="flex flex-col items-center justify-center py-16">
+            <BookmarkX className="h-12 w-12 text-muted-foreground/40" />
+            <p className="mt-4 text-lg font-medium text-muted-foreground">
+              No bookmarks yet
+            </p>
+            <p className="text-sm text-muted-foreground/70">
+              Browse ebooks and save your favorites here.
+            </p>
+            <Button asChild className="mt-4">
+              <Link href="/browse">Browse Ebooks</Link>
+            </Button>
+          </CardContent>
+        </Card>
       ) : (
         <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {bookmarks.map((b) => {
             const ebook = b.ebook;
             if (!ebook) return null;
             return (
-              <div key={b._id} className="group relative rounded-xl border border-border bg-card p-5 shadow-sm">
+              <Card key={b._id} className="group relative overflow-hidden">
                 <Link href={`/ebook/${ebook._id}`}>
                   {ebook.coverImage ? (
-                    <img src={ebook.coverImage} alt={ebook.title} className="h-36 w-full rounded-lg object-cover" />
+                    <img
+                      src={ebook.coverImage}
+                      alt={ebook.title}
+                      className="h-48 w-full object-cover"
+                    />
                   ) : (
-                    <div className="flex h-36 items-center justify-center rounded-lg bg-gradient-to-br from-primary/10 to-primary/5">
-                      <span className="text-3xl font-bold text-primary/30 font-serif">{ebook.title?.charAt(0)}</span>
+                    <div className="flex h-48 items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
+                      <span className="text-4xl font-bold text-primary/30 font-serif">
+                        {ebook.title?.charAt(0)}
+                      </span>
                     </div>
                   )}
-                  <h3 className="mt-3 font-serif font-semibold text-foreground">{ebook.title}</h3>
-                  <div className="mt-2 flex items-center justify-between">
-                    <span className="text-sm font-medium">
-                      {ebook.price === 0 ? "Free" : `$${ebook.price.toFixed(2)}`}
-                    </span>
-                    <Badge variant="secondary">{ebook.genre}</Badge>
-                  </div>
                 </Link>
+                <CardHeader className="pb-2">
+                  <CardTitle className="font-serif text-base">
+                    <Link
+                      href={`/ebook/${ebook._id}`}
+                      className="hover:underline"
+                    >
+                      {ebook.title}
+                    </Link>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="flex items-center justify-between">
+                  <span className="text-sm font-medium">
+                    {ebook.price === 0 ? "Free" : `$${ebook.price.toFixed(2)}`}
+                  </span>
+                  <Badge variant="secondary">{ebook.genre}</Badge>
+                </CardContent>
                 <button
                   onClick={() => remove(ebook._id)}
-                  className="absolute right-3 top-3 rounded-full bg-background/80 p-1.5 text-muted-foreground hover:text-destructive"
+                  className="absolute right-3 top-3 rounded-full bg-background/80 p-1.5 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
                   aria-label="Remove bookmark"
                 >
                   <BookmarkX className="h-4 w-4" />
                 </button>
-              </div>
+              </Card>
             );
           })}
         </div>

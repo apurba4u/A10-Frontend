@@ -1,7 +1,25 @@
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 import { BookOpen } from "lucide-react";
 
 export default function Footer() {
+  const { user } = useAuth();
+  const router = useRouter();
+
+  function handleStartWriting(e) {
+    e.preventDefault();
+    if (!user) {
+      router.push("/register");
+    } else if (user.role === "writer" || user.role === "admin") {
+      router.push("/dashboard/writer");
+    } else {
+      router.push("/become-writer");
+    }
+  }
+
   return (
     <footer className="border-t border-border bg-background">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
@@ -25,9 +43,9 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/register" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <a href="#" onClick={handleStartWriting} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                   Start Writing
-                </Link>
+                </a>
               </li>
             </ul>
           </div>

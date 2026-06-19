@@ -3,13 +3,13 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useAuth } from "../../../context/AuthContext";
-import api from "../../../services/api";
-import { Button } from "../../../components/ui/button";
-import { Card, CardContent } from "../../../components/ui/card";
-import { Badge } from "../../../components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../../components/ui/table";
-import { Plus, Edit, Eye, Trash2 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import api from "@/services/api";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Plus, Edit, Eye, Trash2, Star } from "lucide-react";
 import toast from "react-hot-toast";
 
 export default function WriterDashboardPage() {
@@ -18,6 +18,7 @@ export default function WriterDashboardPage() {
   const [ebooks, setEbooks] = useState([]);
   const [sales, setSales] = useState([]);
   const [salesStats, setSalesStats] = useState({ totalRevenue: 0, totalSales: 0 });
+  const [ebookReviewStats, setEbookReviewStats] = useState({});
   const [verifying, setVerifying] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -39,6 +40,18 @@ export default function WriterDashboardPage() {
         setEbooks(mine);
         setSales(salesRes.data.data?.sales || []);
         setSalesStats(salesRes.data.data?.stats || {});
+
+        const statsPromises = mine.map((e) =>
+          api.get(`/reviews/ebook/${e._id}/stats`).catch(() => ({
+            data: { data: { averageRating: 0, reviewCount: 0 } },
+          }))
+        );
+        const statsResults = await Promise.all(statsPromises);
+        const statsMap = {};
+        mine.forEach((e, i) => {
+          statsMap[e._id] = statsResults[i].data.data;
+        });
+        setEbookReviewStats(statsMap);
       } catch {} finally {
         setLoading(false);
       }
@@ -140,6 +153,13 @@ export default function WriterDashboardPage() {
                     <h3 className="font-semibold">{ebook.title}</h3>
                     <p className="text-sm text-muted-foreground">
                       {ebook.genre} &middot; ${ebook.price.toFixed(2)} &middot; {ebook.soldCount} sold
+                      {ebookReviewStats[ebook._id]?.reviewCount > 0 && (
+                        <span className="ml-2 inline-flex items-center gap-1">
+                          <Star className="inline h-3 w-3 fill-yellow-400 text-yellow-400" />
+                          {ebookReviewStats[ebook._id].averageRating?.toFixed(1)}
+                          ({ebookReviewStats[ebook._id].reviewCount})
+                        </span>
+                      )}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">

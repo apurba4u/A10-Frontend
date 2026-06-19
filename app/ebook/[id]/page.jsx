@@ -1,14 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import api from "../../services/api";
-import { useAuth } from "../../context/AuthContext";
-import { Button } from "../../components/ui/button";
-import { Badge } from "../../components/ui/badge";
-import { Skeleton } from "../../components/ui/skeleton";
-import { ArrowLeft, Bookmark, ShoppingCart, Heart } from "lucide-react";
+import api from "@/services/api";
+import { useAuth } from "@/context/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ArrowLeft, Bookmark, ShoppingCart, Heart, BookOpen } from "lucide-react";
+import CouponInput from "@/components/CouponInput";
+import ReviewForm from "@/components/ReviewForm";
+import ReviewList from "@/components/ReviewList";
 import toast from "react-hot-toast";
 
 export default function EbookDetailPage() {
@@ -21,6 +24,11 @@ export default function EbookDetailPage() {
   const [bookmarked, setBookmarked] = useState(false);
   const [wishlisted, setWishlisted] = useState(false);
   const [purchasing, setPurchasing] = useState(false);
+  const [couponData, setCouponData] = useState({
+    code: null,
+    discountAmount: 0,
+    finalPrice: null,
+  });
 
   useEffect(() => {
     async function load() {
@@ -54,6 +62,22 @@ export default function EbookDetailPage() {
     load();
   }, [id, user, router]);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("purchase") === "success") {
+      toast.success("Purchase completed successfully!");
+      toast("Your ebook is now available in My Library.", { icon: "📚" });
+      router.push("/dashboard/user");
+    }
+  }, [router]);
+
+  const handleCouponApplied = useCallback(
+    (data) => {
+      setCouponData(data);
+    },
+    []
+  );
+
   async function handlePurchase() {
     if (!user) {
       router.push("/login");
@@ -61,7 +85,11 @@ export default function EbookDetailPage() {
     }
     setPurchasing(true);
     try {
-      const res = await api.post("/stripe/create-checkout", { ebookId: id });
+      const payload = { ebookId: id };
+      if (couponData.code) {
+        payload.couponCode = couponData.code;
+      }
+      const res = await api.post("/stripe/create-checkout", payload);
       window.location.href = res.data.url;
     } catch (err) {
       toast.error(err.message);
@@ -130,6 +158,8 @@ export default function EbookDetailPage() {
   if (!ebook) return null;
 
   const isOwner = user && (ebook.writer?._id === user.id || ebook.writer?.id === user.id);
+  const hasCoupon = couponData.code && couponData.finalPrice !== null;
+  const displayPrice = hasCoupon ? couponData.finalPrice : ebook.price;
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
@@ -170,24 +200,56 @@ export default function EbookDetailPage() {
             {ebook.description}
           </p>
 
-          <div className="mt-6 flex items-center gap-4">
-            <span className="text-2xl font-bold text-foreground">
-              {ebook.price === 0 ? "Free" : `$${ebook.price.toFixed(2)}`}
-            </span>
+          <div className="mt-6 flex items-center gap-3">
+            {purchased && (
+              <Badge variant="success" className="text-sm">Purchased</Badge>
+            )}
+            {hasCoupon ? (
+              <>
+                <span className="text-lg text-muted-foreground line-through">
+                  ${ebook.price.toFixed(2)}
+                </span>
+                <span className="text-2xl font-bold text-primary">
+                  ${displayPrice.toFixed(2)}
+                </span>
+              </>
+            ) : (
+              <span className="text-2xl font-bold text-foreground">
+                {ebook.price === 0 ? "Free" : `$${ebook.price.toFixed(2)}`}
+              </span>
+            )}
             <span className="text-sm text-muted-foreground">
               {ebook.soldCount} purchased
             </span>
           </div>
 
+          {!purchased && !isOwner && user && ebook.price > 0 && (
+            <div className="mt-4 max-w-sm">
+              <CouponInput
+                purchaseAmount={ebook.price}
+                onCouponApplied={handleCouponApplied}
+              />
+            </div>
+          )}
+
           <div className="mt-6 flex flex-wrap gap-3">
             {isOwner ? (
               <Button disabled>This is your ebook</Button>
             ) : purchased ? (
-              <Button disabled>Already Purchased</Button>
+              <Link href={`/reader/${id}`}>
+                <Button>
+                  <BookOpen className="mr-2 h-4 w-4" />
+                  Read Now
+                </Button>
+              </Link>
             ) : (
               <Button onClick={handlePurchase} disabled={purchasing}>
                 <ShoppingCart className="mr-2 h-4 w-4" />
-                {purchasing ? "Processing..." : "Purchase"}
+                {purchasing
+                  ? "Processing..."
+                  : hasCoupon
+                    ? `Purchase for $${displayPrice.toFixed(2)}`
+                    : "Purchase"}
               </Button>
             )}
             <Button variant="outline" onClick={toggleBookmark}>
@@ -214,6 +276,23 @@ export default function EbookDetailPage() {
           </div>
         </div>
       )}
+
+      <div className="mt-16 border-t border-border pt-8">
+        <h2 className="font-serif text-2xl font-bold text-foreground">Reviews</h2>
+        <div className="mt-6">
+          <ReviewList ebookId={id} />
+        </div>
+        {purchased && (
+          <div className="mt-8">
+            <ReviewForm ebookId={id} />
+          </div>
+        )}
+        {!purchased && !isOwner && user && (
+          <p className="mt-4 text-sm text-muted-foreground">
+            Purchase this ebook to leave a review.
+          </p>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,9 +1,9 @@
 import "./globals.css";
 import { Inter, Playfair_Display } from "next/font/google";
 import { Toaster } from "react-hot-toast";
-import Providers from "../components/Providers";
-import Navbar from "../components/layout/Navbar";
-import Footer from "../components/layout/Footer";
+import Providers from "@/components/Providers";
+import Navbar from "@/components/layout/Navbar";
+import Footer from "@/components/layout/Footer";
 
 const inter = Inter({
   subsets: ["latin"],

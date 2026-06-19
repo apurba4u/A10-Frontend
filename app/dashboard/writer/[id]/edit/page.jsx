@@ -2,16 +2,16 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import api from "../../../../../services/api";
-import { useAuth } from "../../../../../context/AuthContext";
-import { Button } from "../../../../../components/ui/button";
-import { Input } from "../../../../../components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "../../../../../components/ui/card";
-import { GENRES } from "../../../../../constants";
+import api from "@/services/api";
+import { useAuth } from "@/context/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { GENRES } from "@/constants";
 import toast from "react-hot-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { updateEbookSchema } from "../../../../../validations/ebook";
+import { updateEbookSchema } from "@/validations/ebook";
 
 export default function EditEbookPage() {
   const { id } = useParams();

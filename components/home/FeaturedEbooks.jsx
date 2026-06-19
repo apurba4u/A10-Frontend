@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import api from "../../services/api";
-import { Badge } from "../ui/badge";
-import { Skeleton } from "../ui/skeleton";
+import api from "@/services/api";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 
 export default function FeaturedEbooks() {
   const [ebooks, setEbooks] = useState([]);

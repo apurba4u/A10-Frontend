@@ -2,10 +2,25 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { Button } from "../components/ui/button";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
+import { Button } from "@/components/ui/button";
 import { Search, ArrowRight } from "lucide-react";
 
 export default function Hero() {
+  const { user } = useAuth();
+  const router = useRouter();
+
+  function handleStartWriting() {
+    if (!user) {
+      router.push("/register");
+    } else if (user.role === "writer" || user.role === "admin") {
+      router.push("/dashboard/writer");
+    } else {
+      router.push("/become-writer");
+    }
+  }
+
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-primary/5 via-background to-background">
       <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-5" />
@@ -50,11 +65,9 @@ export default function Hero() {
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
-            <Link href="/register">
-              <Button variant="outline" size="lg">
-                Start Writing
-              </Button>
-            </Link>
+            <Button variant="outline" size="lg" onClick={handleStartWriting}>
+              Start Writing
+            </Button>
           </motion.div>
         </motion.div>
       </div>
