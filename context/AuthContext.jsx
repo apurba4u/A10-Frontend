@@ -109,7 +109,7 @@ export function AuthProvider({ children }) {
   const signInWithGoogle = async () => {
     const { data, error } = await authClient.signIn.social({
       provider: "google",
-      callbackURL: process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000/browse",
+      callbackURL: `${process.env.NEXT_PUBLIC_BASE_URL}/browse`,
     });
     if (error) throw new Error(error.message || error.code);
 
