@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -29,15 +29,13 @@ export default function ProfilePage() {
   const router = useRouter();
   const fileInputRef = useRef(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [avatarPreview, setAvatarPreview] = useState(user?.avatar || "");
   const [saved, setSaved] = useState(false);
 
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting, isDirty },
-    setValue,
-    watch,
+    reset,
   } = useForm({
     resolver: zodResolver(profileSchema),
     defaultValues: {
@@ -46,8 +44,11 @@ export default function ProfilePage() {
     },
   });
 
-  const watchName = watch("name");
-  const watchBio = watch("bio");
+  useEffect(() => {
+    if (user) {
+      reset({ name: user.name || "", bio: user.bio || "" });
+    }
+  }, [user, reset]);
 
   const handleAvatarChange = async (e) => {
     const file = e.target.files?.[0];
@@ -66,7 +67,6 @@ export default function ProfilePage() {
     setIsUploading(true);
     try {
       const imageUrl = await uploadToImgBB(file);
-      setAvatarPreview(imageUrl);
       await api.put("/users/me", { avatar: imageUrl });
       await refreshUser();
       toast.success("Avatar updated");
@@ -81,6 +81,7 @@ export default function ProfilePage() {
     try {
       await api.put("/users/me", data);
       await refreshUser();
+      reset(data);
       setSaved(true);
       toast.success("Profile updated successfully");
       setTimeout(() => setSaved(false), 2000);
@@ -132,7 +133,7 @@ export default function ProfilePage() {
               <div className="relative">
                 <Avatar className="h-32 w-32">
                   <AvatarImage
-                    src={avatarPreview}
+                    src={user?.avatar}
                     alt={user?.name}
                     className="object-cover"
                   />

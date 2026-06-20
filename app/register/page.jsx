@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
-import api from "@/services/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,7 +17,7 @@ import AlreadyLoggedInDialog from "@/components/AlreadyLoggedInDialog";
 export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
-  const { signInWithGoogle, user, refreshUser } = useAuth();
+  const { signInWithGoogle, user, signUp } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -42,14 +41,7 @@ export default function RegisterPage() {
   async function onSubmit(data) {
     setLoading(true);
     try {
-      await api.post("/auth/register", {
-        name: data.name,
-        email: data.email,
-        password: data.password,
-        role: data.role,
-      });
-
-      await refreshUser();
+      await signUp(data.name, data.email, data.password, data.role);
       toast.success("Account created successfully!");
       router.push("/browse");
     } catch (err) {

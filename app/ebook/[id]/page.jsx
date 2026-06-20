@@ -24,6 +24,7 @@ export default function EbookDetailPage() {
   const [bookmarked, setBookmarked] = useState(false);
   const [wishlisted, setWishlisted] = useState(false);
   const [purchasing, setPurchasing] = useState(false);
+  const [existingReview, setExistingReview] = useState(null);
   const [couponData, setCouponData] = useState({
     code: null,
     discountAmount: 0,
@@ -50,6 +51,14 @@ export default function EbookDetailPage() {
           try {
             const wishlistRes = await api.get("/wishlist");
             setWishlisted(wishlistRes.data.data?.some((w) => w.ebook?._id === id));
+          } catch {}
+
+          try {
+            const reviewsRes = await api.get(`/reviews/ebook/${id}`);
+            const userReview = reviewsRes.data.data?.reviews?.find(
+              (r) => r.user?._id === user.id || r.user?.id === user.id
+            );
+            if (userReview) setExistingReview(userReview);
           } catch {}
         }
       } catch {
@@ -240,12 +249,17 @@ export default function EbookDetailPage() {
             {isOwner ? (
               <Button disabled>This is your ebook</Button>
             ) : purchased ? (
-              <Link href={`/reader/${id}`}>
-                <Button>
-                  <BookOpen className="mr-2 h-4 w-4" />
-                  Read Now
-                </Button>
-              </Link>
+              <div className="flex items-center gap-3">
+                <Link href={`/reader/${id}`}>
+                  <Button>
+                    <BookOpen className="mr-2 h-4 w-4" />
+                    Read Now
+                  </Button>
+                </Link>
+                <span className="text-sm text-muted-foreground">
+                  You already own this ebook.
+                </span>
+              </div>
             ) : (
               <Button onClick={handlePurchase} disabled={purchasing}>
                 <ShoppingCart className="mr-2 h-4 w-4" />
@@ -286,14 +300,38 @@ export default function EbookDetailPage() {
         <div className="mt-6">
           <ReviewList ebookId={id} />
         </div>
-        {purchased && (
+        {purchased && existingReview && (
           <div className="mt-8">
-            <ReviewForm ebookId={id} />
+            <div className="rounded-lg border border-border bg-card p-4 mb-4">
+              <p className="text-sm font-medium text-foreground">
+                Thank you for your feedback!
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                You have already reviewed this ebook. You can edit your review below.
+              </p>
+            </div>
+            <ReviewForm
+              ebookId={id}
+              existingReview={existingReview}
+              onReviewUpdated={(review) => {
+                setExistingReview(review);
+              }}
+            />
+          </div>
+        )}
+        {purchased && !existingReview && (
+          <div className="mt-8">
+            <ReviewForm ebookId={id} onReviewUpdated={(review) => setExistingReview(review)} />
           </div>
         )}
         {!purchased && !isOwner && user && (
           <p className="mt-4 text-sm text-muted-foreground">
             Purchase this ebook to leave a review.
+          </p>
+        )}
+        {!user && (
+          <p className="mt-4 text-sm text-muted-foreground">
+            Sign in and purchase this ebook to leave a review.
           </p>
         )}
       </div>

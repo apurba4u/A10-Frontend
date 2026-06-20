@@ -94,7 +94,7 @@ function ApplicationStatusContent() {
       badgeVariant: "destructive",
       title: "Rejected",
       message: application.rejectionReason
-        ? `${application.rejectionReason}. Your payment has been refunded.`
+        ? `Your application was not approved. Your payment has been refunded.`
         : "Your application was not approved. Your payment has been refunded.",
     },
   };
@@ -155,6 +155,13 @@ function ApplicationStatusContent() {
                 </div>
               )}
             </div>
+
+            {application.status === "rejected" && application.rejectionReason && (
+              <div className="mt-6 rounded-lg border border-red-500/30 bg-red-500/5 p-4">
+                <h3 className="text-sm font-semibold text-red-600 dark:text-red-400">Rejection Feedback</h3>
+                <p className="mt-2 text-sm text-muted-foreground">{application.rejectionReason}</p>
+              </div>
+            )}
 
             {application.status === "approved" && (
               <div className="mt-8">

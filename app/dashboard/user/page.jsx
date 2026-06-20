@@ -106,7 +106,9 @@ export default function UserDashboardPage() {
                 <p className="text-xs text-muted-foreground">
                   {writerApplication.status === "pending" && "Your application is pending review."}
                   {writerApplication.status === "approved" && "You are a verified writer."}
-                  {writerApplication.status === "rejected" && "Your application was not approved."}
+                  {writerApplication.status === "rejected" && (writerApplication.rejectionReason
+                    ? `Rejected: ${writerApplication.rejectionReason}`
+                    : "Your application was not approved.")}
                 </p>
               </div>
             </div>

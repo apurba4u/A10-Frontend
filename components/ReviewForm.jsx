@@ -1,19 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import api from "@/services/api";
 import { Button } from "@/components/ui/button";
 import { Star } from "lucide-react";
 import toast from "react-hot-toast";
 
-export default function ReviewForm({ ebookId, onReviewCreated }) {
-  const router = useRouter();
-  const [rating, setRating] = useState(0);
+export default function ReviewForm({ ebookId, existingReview, onReviewUpdated }) {
+  const [rating, setRating] = useState(existingReview?.rating || 0);
   const [hoverRating, setHoverRating] = useState(0);
-  const [comment, setComment] = useState("");
+  const [comment, setComment] = useState(existingReview?.comment || "");
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const isEditing = !!existingReview;
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -23,13 +22,23 @@ export default function ReviewForm({ ebookId, onReviewCreated }) {
     }
     setLoading(true);
     try {
-      const res = await api.post(`/reviews/ebook/${ebookId}`, {
-        rating,
-        comment: comment.trim(),
-      });
-      toast.success("Review submitted!");
-      setSubmitted(true);
-      if (onReviewCreated) onReviewCreated(res.data.data);
+      if (isEditing) {
+        const res = await api.put(`/reviews/${existingReview._id}`, {
+          rating,
+          comment: comment.trim(),
+        });
+        toast.success("Review updated!");
+        setSubmitted(true);
+        if (onReviewUpdated) onReviewUpdated(res.data.data);
+      } else {
+        const res = await api.post(`/reviews/ebook/${ebookId}`, {
+          rating,
+          comment: comment.trim(),
+        });
+        toast.success("Review submitted!");
+        setSubmitted(true);
+        if (onReviewUpdated) onReviewUpdated(res.data.data);
+      }
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -40,7 +49,9 @@ export default function ReviewForm({ ebookId, onReviewCreated }) {
   if (submitted) {
     return (
       <div className="rounded-lg border border-border bg-card p-6 text-center">
-        <p className="text-sm font-medium text-foreground">Thank you for your review!</p>
+        <p className="text-sm font-medium text-foreground">
+          {isEditing ? "Review updated!" : "Thank you for your review!"}
+        </p>
         <p className="mt-1 text-xs text-muted-foreground">Your feedback helps other readers.</p>
       </div>
     );
@@ -48,7 +59,9 @@ export default function ReviewForm({ ebookId, onReviewCreated }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border border-border bg-card p-6">
-      <h3 className="font-serif text-lg font-semibold text-foreground">Write a Review</h3>
+      <h3 className="font-serif text-lg font-semibold text-foreground">
+        {isEditing ? "Edit Review" : "Write a Review"}
+      </h3>
       <div>
         <label className="mb-2 block text-sm font-medium text-foreground">Rating</label>
         <div className="flex gap-1">
@@ -94,7 +107,7 @@ export default function ReviewForm({ ebookId, onReviewCreated }) {
         <p className="mt-1 text-xs text-muted-foreground">{comment.length}/1000</p>
       </div>
       <Button type="submit" size="sm" disabled={loading || rating < 1}>
-        {loading ? "Submitting..." : "Submit Review"}
+        {loading ? "Submitting..." : isEditing ? "Update Review" : "Submit Review"}
       </Button>
     </form>
   );

@@ -32,7 +32,6 @@ const userLinks = [
 const writerLinks = [
   { href: "/dashboard/writer", label: "Overview", icon: LayoutDashboard },
   { href: "/dashboard/library", label: "My Library", icon: Library },
-  { href: "/dashboard/writer", label: "My Ebooks", icon: BookOpen },
   { href: "/dashboard/writer/create", label: "New Ebook", icon: PenLine },
   { href: "/bookmarks", label: "Bookmarks", icon: Bookmark },
   { href: "/notifications", label: "Notifications", icon: Bell },

@@ -71,7 +71,9 @@ export default function AdminDashboardPage() {
         setReviews(reviewsRes.data.data);
         const writerAppsRes = await api.get("/writer-applications");
         setWriterApps(writerAppsRes.data.data);
-      } catch {} finally {
+      } catch (error) {
+        console.error("Failed to load admin dashboard data:", error);
+      } finally {
         setLoading(false);
       }
     }
@@ -122,9 +124,13 @@ export default function AdminDashboardPage() {
 
   async function handleRejectApplication() {
     if (!rejectingApp) return;
+    if (!rejectReason || rejectReason.trim().length < 20) {
+      toast.error("Rejection reason must be at least 20 characters");
+      return;
+    }
     try {
-      await api.post(`/writer-applications/${rejectingApp._id}/reject`, { rejectionReason: rejectReason || "" });
-      setWriterApps((prev) => prev.map((a) => a._id === rejectingApp._id ? { ...a, status: "rejected" } : a));
+      await api.post(`/writer-applications/${rejectingApp._id}/reject`, { rejectionReason: rejectReason.trim() });
+      setWriterApps((prev) => prev.map((a) => a._id === rejectingApp._id ? { ...a, status: "rejected", rejectionReason: rejectReason.trim() } : a));
       toast.success("Application rejected");
       setRejectingApp(null);
       setRejectReason("");
@@ -737,18 +743,32 @@ export default function AdminDashboardPage() {
             <p className="mt-1 text-sm text-muted-foreground">
               Rejecting {rejectingApp.user?.name || "Unknown"}&apos;s writer application. A refund will be issued.
             </p>
+            <label className="mt-4 block text-sm font-medium text-foreground">
+              Rejection Reason <span className="text-destructive">*</span>
+            </label>
             <textarea
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
-              placeholder="Reason for rejection (optional)"
-              className="mt-4 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              rows={3}
+              placeholder="Provide detailed feedback for the applicant (minimum 20 characters)..."
+              className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              rows={4}
+              required
             />
+            <div className="mt-1 flex items-center justify-between">
+              <p className={`text-xs ${rejectReason.length < 20 ? "text-destructive" : "text-muted-foreground"}`}>
+                {rejectReason.length}/20 minimum characters
+              </p>
+            </div>
             <div className="mt-4 flex justify-end gap-2">
               <Button variant="outline" size="sm" onClick={() => { setRejectingApp(null); setRejectReason(""); }}>
                 Cancel
               </Button>
-              <Button variant="destructive" size="sm" onClick={handleRejectApplication}>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleRejectApplication}
+                disabled={!rejectReason || rejectReason.trim().length < 20}
+              >
                 Reject Application
               </Button>
             </div>

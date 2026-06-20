@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, createContext, useContext, cloneElement } from "react";
 import { cn } from "@/lib/utils";
+
+const DropdownMenuContext = createContext(null);
 
 function DropdownMenu({ children }) {
   const [open, setOpen] = useState(false);
@@ -18,19 +20,32 @@ function DropdownMenu({ children }) {
   }, []);
 
   return (
-    <div ref={ref} className="relative inline-block text-left">
-      {typeof children === "function"
-        ? children({ open, setOpen })
-        : children}
-    </div>
+    <DropdownMenuContext.Provider value={{ open, setOpen }}>
+      <div ref={ref} className="relative inline-block text-left">
+        {children}
+      </div>
+    </DropdownMenuContext.Provider>
   );
 }
 
-function DropdownMenuTrigger({ asChild, children, ...props }) {
+function DropdownMenuTrigger({ children, className, asChild, ...props }) {
+  const { open, setOpen } = useContext(DropdownMenuContext);
+
+  if (asChild) {
+    return cloneElement(children, {
+      onClick: (e) => {
+        children.props.onClick?.(e);
+        setOpen(!open);
+      },
+      ...props,
+    });
+  }
+
   return (
     <button
       type="button"
-      onClick={props.onClick}
+      className={className}
+      onClick={() => setOpen(!open)}
       {...props}
     >
       {children}
@@ -39,6 +54,8 @@ function DropdownMenuTrigger({ asChild, children, ...props }) {
 }
 
 function DropdownMenuContent({ className, align = "end", children, ...props }) {
+  const { open } = useContext(DropdownMenuContext);
+  if (!open) return null;
   return (
     <div
       className={cn(
@@ -55,13 +72,17 @@ function DropdownMenuContent({ className, align = "end", children, ...props }) {
 }
 
 function DropdownMenuItem({ className, onClick, children, ...props }) {
+  const { setOpen } = useContext(DropdownMenuContext);
   return (
     <button
       className={cn(
         "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground w-full text-left",
         className
       )}
-      onClick={onClick}
+      onClick={(e) => {
+        onClick?.(e);
+        setOpen(false);
+      }}
       {...props}
     >
       {children}

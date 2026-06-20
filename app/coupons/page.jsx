@@ -5,7 +5,7 @@ import api from "@/services/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Ticket, Copy, CheckCircle, Tag, Percent, Clock, AlertCircle } from "lucide-react";
+import { Ticket, Copy, CheckCircle, Tag, Percent, Clock, AlertCircle, Info, ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 
@@ -84,74 +84,97 @@ export default function CouponsPage() {
         </motion.div>
       ) : (
         <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {coupons.map((coupon, i) => (
-            <motion.div
-              key={coupon._id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: i * 0.1 }}
-            >
-              <Card className="h-full overflow-hidden transition-all hover:shadow-lg">
-                <div className="bg-gradient-to-r from-primary to-primary/80 p-6 text-center text-primary-foreground">
-                  <Percent className="mx-auto h-8 w-8 opacity-80" />
-                  <p className="mt-2 text-4xl font-bold">{coupon.discountPercent}%</p>
-                  <p className="text-sm opacity-90">OFF</p>
-                </div>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-mono text-lg font-bold text-foreground tracking-wider">
-                      {coupon.code}
-                    </h3>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => copyCoupon(coupon.code)}
-                      className="gap-1"
-                    >
-                      {copiedCode === coupon.code ? (
-                        <>
-                          <CheckCircle className="h-3 w-3" />
-                          Copied
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="h-3 w-3" />
-                          Copy
-                        </>
-                      )}
-                    </Button>
+          {coupons.map((coupon, i) => {
+            const isExpired = coupon.expiresAt && new Date(coupon.expiresAt) < new Date();
+            const usesRemaining = coupon.usageLimit ? coupon.usageLimit - coupon.usedCount : null;
+            return (
+              <motion.div
+                key={coupon._id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
+              >
+                <Card className="h-full overflow-hidden transition-all hover:shadow-lg">
+                  <div className="bg-gradient-to-r from-primary to-primary/80 p-6 text-center text-primary-foreground">
+                    <Percent className="mx-auto h-8 w-8 opacity-80" />
+                    <p className="mt-2 text-4xl font-bold">{coupon.discountPercent}%</p>
+                    <p className="text-sm opacity-90">OFF</p>
                   </div>
-                  <p className="mt-3 text-sm text-muted-foreground">{coupon.description}</p>
-                  <div className="mt-4 space-y-2 text-xs text-muted-foreground">
-                    {coupon.minPurchaseAmount > 0 && (
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-mono text-lg font-bold text-foreground tracking-wider">
+                        {coupon.code}
+                      </h3>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => copyCoupon(coupon.code)}
+                        className="gap-1"
+                      >
+                        {copiedCode === coupon.code ? (
+                          <>
+                            <CheckCircle className="h-3 w-3" />
+                            Copied
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            Copy
+                          </>
+                        )}
+                      </Button>
+                    </div>
+
+                    {coupon.description && (
+                      <p className="mt-3 text-sm text-muted-foreground">{coupon.description}</p>
+                    )}
+
+                    <div className="mt-4 space-y-2 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <ShieldCheck className="h-3 w-3" />
+                        <span>First ebook purchase only</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Info className="h-3 w-3" />
+                        <span>One-time use per account</span>
+                      </div>
                       <div className="flex items-center gap-2">
                         <Tag className="h-3 w-3" />
-                        Min purchase: ${coupon.minPurchaseAmount}
+                        <span>Cannot be used for Writer Upgrade payment</span>
                       </div>
-                    )}
-                    {coupon.usageLimit && (
-                      <div className="flex items-center gap-2">
-                        <Ticket className="h-3 w-3" />
-                        {coupon.usageLimit - coupon.usedCount} uses remaining
-                      </div>
-                    )}
-                    {coupon.expiresAt && (
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-3 w-3" />
-                        Expires {new Date(coupon.expiresAt).toLocaleDateString()}
-                      </div>
-                    )}
-                  </div>
-                  <div className="mt-4 rounded-lg bg-muted p-3">
-                    <p className="text-xs font-medium text-muted-foreground">How to use:</p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Copy the code above, then apply it at checkout when purchasing an ebook.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
+                      {coupon.minPurchaseAmount > 0 && (
+                        <div className="flex items-center gap-2">
+                          <Tag className="h-3 w-3" />
+                          <span>Minimum purchase: ${coupon.minPurchaseAmount}</span>
+                        </div>
+                      )}
+                      {usesRemaining !== null && (
+                        <div className="flex items-center gap-2">
+                          <Ticket className="h-3 w-3" />
+                          <span>{usesRemaining} use{usesRemaining !== 1 ? "s" : ""} remaining</span>
+                        </div>
+                      )}
+                      {coupon.expiresAt && (
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-3 w-3" />
+                          <span>
+                            {isExpired ? "Expired" : `Expires ${new Date(coupon.expiresAt).toLocaleDateString()}`}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-4 rounded-lg bg-muted p-3">
+                      <p className="text-xs font-medium text-muted-foreground">How to use:</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Copy the code above, then apply it at checkout when purchasing an ebook.
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            );
+          })}
         </div>
       )}
     </div>

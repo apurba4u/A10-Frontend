@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import api from "@/services/api";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -66,24 +67,32 @@ export default function CouponInput({ purchaseAmount, onCouponApplied }) {
             </Button>
           </div>
         ) : (
-          <div className="flex gap-2">
-            <Input
-              placeholder="Try OVI10 for 10% OFF"
-              value={couponCode}
-              onChange={(e) => {
-                setCouponCode(e.target.value.toUpperCase());
-                setError("");
-              }}
-              onKeyDown={(e) => e.key === "Enter" && handleApply()}
-              disabled={loading}
-            />
-            <Button
-              onClick={handleApply}
-              disabled={loading || !couponCode.trim()}
-            >
-              {loading ? "Applying..." : "Apply"}
-            </Button>
-          </div>
+          <>
+            <div className="flex gap-2">
+              <Input
+                placeholder="Enter coupon code"
+                value={couponCode}
+                onChange={(e) => {
+                  setCouponCode(e.target.value.toUpperCase());
+                  setError("");
+                }}
+                onKeyDown={(e) => e.key === "Enter" && handleApply()}
+                disabled={loading}
+              />
+              <Button
+                onClick={handleApply}
+                disabled={loading || !couponCode.trim()}
+              >
+                {loading ? "Applying..." : "Apply"}
+              </Button>
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Looking for discounts?{" "}
+              <Link href="/coupons" className="text-primary hover:underline">
+                View Available Coupons &rarr;
+              </Link>
+            </p>
+          </>
         )}
         {error && (
           <p className="mt-2 text-sm text-destructive">{error}</p>

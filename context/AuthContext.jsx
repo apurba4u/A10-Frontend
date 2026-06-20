@@ -4,29 +4,40 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import api from "@/services/api";
 import toast from "react-hot-toast";
+import RoleSelectionModal from "@/components/RoleSelectionModal";
 
 const AuthContext = createContext(null);
+
+async function syncSession() {
+  const res = await api.get("/auth/session");
+  if (res.data?.data?.user) {
+    return { user: res.data.data.user, session: res.data.data.session };
+  }
+  return { user: null, session: null };
+}
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showRoleModal, setShowRoleModal] = useState(false);
 
   useEffect(() => {
     async function load() {
       try {
-        const res = await api.get("/auth/session");
-        if (res.data?.data?.user) {
-          setUser(res.data.data.user);
-          setSession(res.data.data.session);
-          checkApplicationStatus();
-        } else {
-          setUser(null);
-          setSession(null);
+        const ba = await authClient.getSession();
+        if (ba.data?.session) {
+          const synced = await syncSession();
+          if (synced.user) {
+            setUser(synced.user);
+            setSession(synced.session);
+            if (!synced.user.hasChosenRole) {
+              setShowRoleModal(true);
+            }
+            checkApplicationStatus();
+          }
         }
       } catch {
-        setUser(null);
-        setSession(null);
       } finally {
         setLoading(false);
       }
@@ -47,9 +58,9 @@ export function AuthProvider({ children }) {
               duration: 6000,
             });
           } else if (app.status === "rejected") {
-            toast.error("Your writer application was not approved.", {
-              description: "Payment has been refunded. Please check your account.",
-              duration: 6000,
+            toast.error("Your writer application was rejected. Check feedback for details.", {
+              description: app.rejectionReason || "Payment has been refunded. Please check your account.",
+              duration: 8000,
             });
           }
           if (typeof window !== "undefined") {
@@ -61,45 +72,40 @@ export function AuthProvider({ children }) {
   }
 
   const signIn = async (email, password) => {
-    const res = await api.post("/auth/login", { email, password });
-    const userData = res.data?.data?.user;
-    if (userData) {
-      setUser(userData);
-    }
-    const sessionRes = await api.get("/auth/session");
-    if (sessionRes.data?.data?.user) {
-      setUser(sessionRes.data.data.user);
-      setSession(sessionRes.data.data.session);
+    const { data, error } = await authClient.signIn.email({ email, password });
+    if (error) throw new Error(error.message || error.code || "Sign in failed");
+    const synced = await syncSession();
+    if (synced.user) {
+      setUser(synced.user);
+      setSession(synced.session);
+      if (!synced.user.hasChosenRole) {
+        setShowRoleModal(true);
+      }
       checkApplicationStatus();
     }
-    return res.data;
   };
 
   const signUp = async (name, email, password, role) => {
-    const res = await api.post("/auth/register", { name, email, password, role });
-    const userData = res.data?.data?.user;
-    if (userData) {
-      setUser(userData);
+    const { data, error } = await authClient.signUp.email({ name, email, password });
+    if (error) throw new Error(error.message || error.code || "Registration failed");
+    if (role && role !== "user") {
+      try {
+        await api.put("/auth/role", { role });
+      } catch {}
     }
-    const sessionRes = await api.get("/auth/session");
-    if (sessionRes.data?.data?.user) {
-      setUser(sessionRes.data.data.user);
-      setSession(sessionRes.data.data.session);
+    const synced = await syncSession();
+    if (synced.user) {
+      setUser(synced.user);
+      setSession(synced.session);
       checkApplicationStatus();
     }
-    return res.data;
   };
 
   const refreshUser = async () => {
     try {
-      const res = await api.get("/auth/session");
-      if (res.data?.data?.user) {
-        setUser(res.data.data.user);
-        setSession(res.data.data.session);
-      } else {
-        setUser(null);
-        setSession(null);
-      }
+      const synced = await syncSession();
+      setUser(synced.user);
+      setSession(synced.session);
     } catch {
       setUser(null);
       setSession(null);
@@ -109,25 +115,27 @@ export function AuthProvider({ children }) {
   const signInWithGoogle = async () => {
     const { data, error } = await authClient.signIn.social({
       provider: "google",
-      callbackURL: `${process.env.NEXT_PUBLIC_BASE_URL}/browse`,
+      callbackURL: `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/dashboard`,
     });
-    if (error) throw new Error(error.message || error.code);
-
-    const res = await api.get("/auth/session");
-    if (res.data?.data?.user) {
-      setUser(res.data.data.user);
-      setSession(res.data.data.session);
-      checkApplicationStatus();
-    }
-    return data;
+    if (error) throw new Error(error.message || error.code || "Google sign-in failed");
   };
 
   const signOut = async () => {
-    try {
-      await api.post("/auth/logout");
-    } catch {}
+    await authClient.signOut();
     setUser(null);
     setSession(null);
+  };
+
+  const handleRoleSelected = async (role) => {
+    setShowRoleModal(false);
+    try {
+      await api.put("/auth/role", { role });
+    } catch {}
+    const synced = await syncSession();
+    if (synced.user) {
+      setUser(synced.user);
+      setSession(synced.session);
+    }
   };
 
   return (
@@ -144,6 +152,7 @@ export function AuthProvider({ children }) {
       }}
     >
       {children}
+      <RoleSelectionModal open={showRoleModal} onSelect={handleRoleSelected} />
     </AuthContext.Provider>
   );
 }

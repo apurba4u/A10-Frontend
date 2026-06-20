@@ -10,9 +10,27 @@ import { Badge } from "@/components/ui/badge";
 import { BookOpen, Library, Star } from "lucide-react";
 import { motion } from "framer-motion";
 
+function StarRating({ rating }) {
+  return (
+    <div className="flex gap-0.5">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <Star
+          key={star}
+          className={`h-3.5 w-3.5 ${
+            star <= rating
+              ? "fill-yellow-400 text-yellow-400"
+              : "text-muted-foreground"
+          }`}
+        />
+      ))}
+    </div>
+  );
+}
+
 export default function LibraryPage() {
   const { user } = useAuth();
   const [purchases, setPurchases] = useState([]);
+  const [ratings, setRatings] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -22,6 +40,24 @@ export default function LibraryPage() {
         const all = res.data.data || [];
         const purchased = all.filter((t) => t.type === "purchase" && t.ebook);
         setPurchases(purchased);
+
+        const ratingPromises = purchased
+          .filter((t) => t.ebook?._id)
+          .map(async (t) => {
+            try {
+              const statsRes = await api.get(`/reviews/ebook/${t.ebook._id}/stats`);
+              return { ebookId: t.ebook._id, ...statsRes.data.data };
+            } catch {
+              return { ebookId: t.ebook._id, averageRating: 0, reviewCount: 0 };
+            }
+          });
+
+        const ratingResults = await Promise.all(ratingPromises);
+        const ratingsMap = {};
+        ratingResults.forEach((r) => {
+          ratingsMap[r.ebookId] = { averageRating: r.averageRating, reviewCount: r.reviewCount };
+        });
+        setRatings(ratingsMap);
       } catch {} finally {
         setLoading(false);
       }
@@ -111,6 +147,14 @@ export default function LibraryPage() {
                   <p className="mt-1 text-xs text-muted-foreground">
                     Purchased {new Date(p.createdAt).toLocaleDateString()}
                   </p>
+                  {ratings[p.ebook?._id] && ratings[p.ebook._id].reviewCount > 0 && (
+                    <div className="mt-2 flex items-center gap-2">
+                      <StarRating rating={Math.round(ratings[p.ebook._id].averageRating)} />
+                      <span className="text-xs text-muted-foreground">
+                        {ratings[p.ebook._id].averageRating.toFixed(1)} ({ratings[p.ebook._id].reviewCount})
+                      </span>
+                    </div>
+                  )}
                   {p.ebook?.price === 0 && (
                     <Badge variant="secondary" className="mt-2 text-[10px]">Free</Badge>
                   )}

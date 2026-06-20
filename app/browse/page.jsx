@@ -3,6 +3,7 @@
 import { Suspense, useState, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { motion } from "framer-motion";
 import api from "@/services/api";
 import { useAuth } from "@/context/AuthContext";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -68,9 +69,21 @@ function BrowseContent() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <h1 className="font-serif text-3xl font-bold text-foreground">Browse Ebooks</h1>
+      <motion.h1
+        className="font-serif text-3xl font-bold text-foreground"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
+        Browse Ebooks
+      </motion.h1>
 
-      <div className="mt-6 flex flex-col gap-4 sm:flex-row">
+      <motion.div
+        className="mt-6 flex flex-col gap-4 sm:flex-row"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+      >
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -99,7 +112,7 @@ function BrowseContent() {
             <option key={opt.value} value={opt.value}>{opt.label}</option>
           ))}
         </select>
-      </div>
+      </motion.div>
 
       {loading ? (
         <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -119,53 +132,59 @@ function BrowseContent() {
       ) : (
         <>
           <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {ebooks.map((ebook) => (
-              <Link
+            {ebooks.map((ebook, i) => (
+              <motion.div
                 key={ebook._id}
-                href={`/ebook/${ebook._id}`}
-                className="group rounded-xl border border-border bg-card p-5 shadow-sm transition-all hover:shadow-md hover:border-primary/50"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: i * 0.05 }}
               >
-                <div className="relative">
-                  {ebook.coverImage ? (
-                    <img
-                      src={ebook.coverImage}
-                      alt={`Cover of ${ebook.title}`}
-                      className="h-48 w-full rounded-lg object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-48 items-center justify-center rounded-lg bg-gradient-to-br from-primary/10 to-primary/5">
-                      <span className="text-4xl font-bold text-primary/30 font-serif">
-                        {ebook.title.charAt(0)}
+                <Link
+                  href={`/ebook/${ebook._id}`}
+                  className="group block rounded-xl border border-border bg-card p-5 shadow-sm transition-all hover:shadow-md hover:border-primary/50"
+                >
+                  <div className="relative">
+                    {ebook.coverImage ? (
+                      <img
+                        src={ebook.coverImage}
+                        alt={`Cover of ${ebook.title}`}
+                        className="h-48 w-full rounded-lg object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-48 items-center justify-center rounded-lg bg-gradient-to-br from-primary/10 to-primary/5">
+                        <span className="text-4xl font-bold text-primary/30 font-serif">
+                          {ebook.title.charAt(0)}
+                        </span>
+                      </div>
+                    )}
+                    {purchasedIds.has(ebook._id) && (
+                      <Badge variant="success" className="absolute right-2 top-2">Purchased</Badge>
+                    )}
+                  </div>
+                  <h3 className="mt-3 font-serif font-semibold text-foreground group-hover:text-primary transition-colors">
+                    {ebook.title}
+                  </h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    by {ebook.writer?.name || "Unknown"}
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
+                    {ebook.description}
+                  </p>
+                  <div className="mt-3 flex items-center justify-between">
+                    {purchasedIds.has(ebook._id) ? (
+                      <span className="inline-flex items-center gap-1 text-sm font-medium text-primary">
+                        <BookOpen className="h-3.5 w-3.5" />
+                        Read Now
                       </span>
-                    </div>
-                  )}
-                  {purchasedIds.has(ebook._id) && (
-                    <Badge variant="success" className="absolute right-2 top-2">Purchased</Badge>
-                  )}
-                </div>
-                <h3 className="mt-3 font-serif font-semibold text-foreground group-hover:text-primary transition-colors">
-                  {ebook.title}
-                </h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  by {ebook.writer?.name || "Unknown"}
-                </p>
-                <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
-                  {ebook.description}
-                </p>
-                <div className="mt-3 flex items-center justify-between">
-                  {purchasedIds.has(ebook._id) ? (
-                    <span className="inline-flex items-center gap-1 text-sm font-medium text-primary">
-                      <BookOpen className="h-3.5 w-3.5" />
-                      Read Now
-                    </span>
-                  ) : (
-                    <span className="text-sm font-bold text-foreground">
-                      {ebook.price === 0 ? "Free" : `$${ebook.price.toFixed(2)}`}
-                    </span>
-                  )}
-                  <Badge variant="secondary">{ebook.genre}</Badge>
-                </div>
-              </Link>
+                    ) : (
+                      <span className="text-sm font-bold text-foreground">
+                        {ebook.price === 0 ? "Free" : `$${ebook.price.toFixed(2)}`}
+                      </span>
+                    )}
+                    <Badge variant="secondary">{ebook.genre}</Badge>
+                  </div>
+                </Link>
+              </motion.div>
             ))}
           </div>
 
